@@ -1,0 +1,105 @@
+import java.sql.*;
+import java.util.ArrayList;
+
+public class connect {
+    private static final String URL = "jdbc:mysql://localhost:3306/phonebooksc";
+    private static final String USER = "root";
+    private static final String PASSWORD = "1234";
+
+
+    public static ArrayList<String[]> executeQuery(String query) {
+        ArrayList<String[]> results = new ArrayList<>();
+
+        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
+             Statement statement = connection.createStatement();
+             ResultSet rs = statement.executeQuery(query)) {
+
+            ResultSetMetaData metaData = rs.getMetaData();
+            int columnCount = metaData.getColumnCount();
+
+            while (rs.next()) {
+                String[] row = new String[columnCount];
+                for (int i = 0; i < columnCount; i++) {
+                    row[i] = rs.getString(i + 1);
+                }
+                results.add(row);
+            }
+            if (results.isEmpty()) {
+                System.out.println("No contacts in table!");
+            }
+        } catch (SQLException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+        return results;
+    }
+
+    public static void addContact(String name, String phone) {
+        if (name.isEmpty() || phone.isEmpty()) {
+            System.out.println("Name and phone number cannot be empty.");
+            return;
+        }
+
+        String query = "INSERT INTO contacts (name, phone) VALUES (?, ?)";
+        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setString(1, name);
+            pstmt.setString(2, phone);
+            pstmt.executeUpdate();
+            System.out.println("Contact added!");
+
+        } catch (SQLException e) {
+            System.out.println("Error when adding: " + e.getMessage());
+        }
+    }
+
+
+    public static void updateContact(String id, String name, String newValue) {
+        if (id.isEmpty() || newValue.isEmpty()) {
+            System.out.println("Name and phone number cannot be empty.");
+            return;
+        }
+
+        String query = "UPDATE contacts SET " + name + " = ? WHERE id = ? ";
+
+        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setString(1, newValue);
+            pstmt.setString(2, id);
+            int rowsAffected = pstmt.executeUpdate();
+
+            if (rowsAffected > 0) {
+                System.out.println("Contact updated!");
+            } else {
+                System.out.println("Contact not found.");
+            }
+        } catch (SQLException e) {
+            System.out.println("Error when updating: " + e.getMessage());
+        }
+    }
+
+
+    public static void deleteContact(String id) {
+        if (id.isEmpty()) {
+                System.out.println("Can't delete a contact with an empty id.");
+                return;
+            }
+
+        String query = "DELETE FROM contacts WHERE id = ?";
+        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement pstmt = connection.prepareStatement(query)) {
+             pstmt.setString(1, id);
+
+            int rowsAffected = pstmt.executeUpdate();
+
+            if (rowsAffected > 0) {
+                System.out.println("Contact deleted with ID: " + id);
+            } else {
+                System.out.println("Contact not found.");
+            }
+        } catch (SQLException e) {
+            System.out.println("Error when deleting: " + e.getMessage());
+        }
+    }
+
+
+}
